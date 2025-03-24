@@ -10,6 +10,7 @@ class PointService(
     private val pointHistoryTable: PointHistoryTable
 ) {
     fun getUserPoint(id: Long): UserPoint {
+        require(id > 0) { "유저 ID에는 0 이하의 값을 입력할 수 없습니다." }
         return userPointTable.selectById(id)
     }
 
