@@ -18,7 +18,8 @@ class PointService(
     }
 
     fun chargeUserPoint(id: Long, amount: Long): UserPoint {
-        val userPoint = userPointTable.insertOrUpdate(id, amount)
+        var userPoint = getUserPoint(id)
+        userPoint = userPointTable.insertOrUpdate(id, userPoint.point + amount)
         pointHistoryTable.insert(id, amount, TransactionType.CHARGE, System.currentTimeMillis())
         return userPoint
     }
