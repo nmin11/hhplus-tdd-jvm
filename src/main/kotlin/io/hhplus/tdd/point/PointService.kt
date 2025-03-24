@@ -16,4 +16,10 @@ class PointService(
     fun getUserPointHistory(id: Long): List<PointHistory> {
         return pointHistoryTable.selectAllByUserId(id)
     }
+
+    fun chargeUserPoint(id: Long, amount: Long): UserPoint {
+        val userPoint = userPointTable.insertOrUpdate(id, amount)
+        pointHistoryTable.insert(id, amount, TransactionType.CHARGE, System.currentTimeMillis())
+        return userPoint
+    }
 }
