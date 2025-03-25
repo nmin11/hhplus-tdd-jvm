@@ -204,4 +204,44 @@ class PointServiceTest {
             pointHistoryTable.insert(newUserId, chargeAmount, TransactionType.CHARGE, any())
         }
     }
+
+    @Test
+    fun `chargeUserPoint_기존에_있는_유저의_포인트_충전_성공`() {
+        // given
+        val chargeAmount = 1000L
+
+        every { userPointTable.selectById(1L) } returns mockUserPoint
+
+        every { userPointTable.insertOrUpdate(mockUserPoint.id, mockUserPoint.point + chargeAmount) }
+            .answers {
+                UserPoint(
+                    id = mockUserPoint.id,
+                    point = mockUserPoint.point + chargeAmount,
+                    updateMillis = now
+                )
+            }
+
+        every { pointHistoryTable.insert(mockUserPoint.id, chargeAmount, TransactionType.CHARGE, any()) }
+            .answers {
+                PointHistory(
+                    id = 3,
+                    userId = mockUserPoint.id,
+                    type = TransactionType.CHARGE,
+                    amount = chargeAmount,
+                    timeMillis = System.currentTimeMillis()
+                )
+            }
+
+        // when
+        val result = pointService.chargeUserPoint(mockUserPoint.id, amount = chargeAmount)
+
+        // then
+        assertThat(result.id).isEqualTo(mockUserPoint.id)
+        assertThat(result.point).isEqualTo(mockUserPoint.point + chargeAmount)
+        verifySequence {
+            userPointTable.selectById(mockUserPoint.id)
+            userPointTable.insertOrUpdate(mockUserPoint.id, mockUserPoint.point + chargeAmount)
+            pointHistoryTable.insert(mockUserPoint.id, chargeAmount, TransactionType.CHARGE, any())
+        }
+    }
 }
