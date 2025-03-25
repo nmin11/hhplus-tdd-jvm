@@ -138,6 +138,23 @@ class PointServiceTest {
     }
 
     @Test
+    fun `chargeUserPoint_id가_0_이하인_경우_예외_발생`() {
+        // given
+        val invalidId = 0L
+        val amount = 1000L
+
+        // when
+        val exception = assertThrows<IllegalArgumentException> {
+            pointService.chargeUserPoint(invalidId, amount)
+        }
+
+        // then
+        assertThat(exception)
+            .isInstanceOf(IllegalArgumentException::class.java)
+            .hasMessage("유저 ID에는 0 이하의 값을 입력할 수 없습니다.")
+    }
+
+    @Test
     fun `chargeUserPoint_음수_금액이면_예외_발생`() {
         // given
         val invalidAmount = -1000L
