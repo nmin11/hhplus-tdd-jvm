@@ -2,12 +2,15 @@ package io.hhplus.tdd
 
 import io.hhplus.tdd.database.PointHistoryTable
 import io.hhplus.tdd.database.UserPointTable
+import io.hhplus.tdd.point.PointHistory
 import io.hhplus.tdd.point.PointService
+import io.hhplus.tdd.point.TransactionType
 import io.hhplus.tdd.point.UserPoint
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import io.mockk.verify
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -23,6 +26,31 @@ class PointServiceTest {
     private lateinit var pointHistoryTable: PointHistoryTable
 
     private lateinit var pointService: PointService
+
+    private val now = System.currentTimeMillis()
+
+    private var mockUserPoint = UserPoint(
+        id = 1L,
+        point = 5000L,
+        updateMillis = now
+    )
+
+    private var mockPointHistories = mutableListOf(
+        PointHistory(
+            id = 1L,
+            userId = 1L,
+            amount = 10000L,
+            type = TransactionType.CHARGE,
+            timeMillis = now - 10000
+        ),
+        PointHistory(
+            id = 1L,
+            userId = 1L,
+            amount = 5000L,
+            type = TransactionType.USE,
+            timeMillis = now
+        )
+    )
 
     @BeforeEach
     fun setup() {
@@ -47,10 +75,9 @@ class PointServiceTest {
     }
 
     @Test
-    fun `getUserPoint_기존에_없는_id이면_새로운_유저_생성_및_반환`() {
+    fun `getUserPoint_기존에_없는_id이면_새로운_유저_반환`() {
         // given
         val newUserId = 999L
-        val now = System.currentTimeMillis()
         every { userPointTable.selectById(newUserId) } answers {
             UserPoint(
                 id = newUserId,
@@ -66,5 +93,20 @@ class PointServiceTest {
         assertThat(result.id).isEqualTo(newUserId)
         assertThat(result.point).isEqualTo(0L)
         assertThat(result.updateMillis).isEqualTo(now)
+    }
+
+    @Test
+    fun `getUserPoint_올바른_유저_정보_반환`() {
+        // given
+        every { userPointTable.selectById(1L) } returns mockUserPoint
+
+        // when
+        val result = pointService.getUserPoint(1L)
+
+        // then
+        assertThat(result.id).isEqualTo(mockUserPoint.id)
+        assertThat(result.point).isEqualTo(mockUserPoint.point)
+        assertThat(result.updateMillis).isEqualTo(mockUserPoint.updateMillis)
+        verify(exactly = 1) { userPointTable.selectById(1L) }
     }
 }
