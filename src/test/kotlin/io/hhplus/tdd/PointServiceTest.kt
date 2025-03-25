@@ -122,4 +122,18 @@ class PointServiceTest {
         // then
         assertThat(result).isEmpty()
     }
+
+    @Test
+    fun `getUserPointHistories_올바른_포인트_사용_내역_반환`() {
+        // given
+        every { pointHistoryTable.selectAllByUserId(1L) } returns mockPointHistories
+
+        // when
+        val result = pointService.getUserPointHistories(1L)
+
+        // then
+        assertThat(result).hasSize(2)
+        assertThat(result).containsExactlyElementsOf(mockPointHistories)
+        verify(exactly = 1) { pointHistoryTable.selectAllByUserId(1L) }
+    }
 }
