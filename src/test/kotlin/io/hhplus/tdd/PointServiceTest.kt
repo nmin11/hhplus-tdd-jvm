@@ -261,4 +261,21 @@ class PointServiceTest {
             pointHistoryTable.insert(mockUserPoint.id, chargeAmount, TransactionType.CHARGE, any())
         }
     }
+
+    @Test
+    fun `useUserPoint_id가_0_이하인_경우_예외_발생`() {
+        // given
+        val invalidId = 0L
+        val amount = 1000L
+
+        // when
+        val exception = assertThrows<IllegalArgumentException> {
+            pointService.useUserPoint(invalidId, amount)
+        }
+
+        // then
+        assertThat(exception)
+            .isInstanceOf(IllegalArgumentException::class.java)
+            .hasMessage("유저 ID에는 0 이하의 값을 입력할 수 없습니다.")
+    }
 }
