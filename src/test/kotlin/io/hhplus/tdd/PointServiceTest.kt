@@ -111,13 +111,13 @@ class PointServiceTest {
     }
 
     @Test
-    fun `getUserPointHistory_유저가_없거나_사용_내역이_없으면_빈_배열_반환`() {
+    fun `getUserPointHistories_유저가_없거나_사용_내역이_없으면_빈_배열_반환`() {
         // given
         val userId = 2L
         every { pointHistoryTable.selectAllByUserId(userId) } returns emptyList()
 
         // when
-        val result = pointService.getUserPointHistory(userId)
+        val result = pointService.getUserPointHistories(userId)
 
         // then
         assertThat(result).isEmpty()

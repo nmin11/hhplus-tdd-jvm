@@ -28,7 +28,7 @@ class PointController(
     fun history(
         @PathVariable id: Long,
     ): List<PointHistory> {
-        return pointService.getUserPointHistory(id)
+        return pointService.getUserPointHistories(id)
     }
 
     /**
