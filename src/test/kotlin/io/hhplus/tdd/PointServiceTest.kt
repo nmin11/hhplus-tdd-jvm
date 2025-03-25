@@ -311,4 +311,41 @@ class PointServiceTest {
             .isInstanceOf(IllegalStateException::class.java)
             .hasMessage("보유 포인트가 부족합니다.")
     }
+
+    @Test
+    fun `useUserPoint_보유_포인트가_충분하면_포인트_사용_성공`() {
+        // given
+        val useAmount = 3000L
+        val updatedPoint = mockUserPoint.point - useAmount
+
+        every { userPointTable.selectById(1L) } returns mockUserPoint
+
+        every { userPointTable.insertOrUpdate(mockUserPoint.id, updatedPoint) }
+            .answers {
+                UserPoint(mockUserPoint.id, updatedPoint, now)
+            }
+
+        every { pointHistoryTable.insert(mockUserPoint.id, useAmount, TransactionType.USE, any()) }
+            .answers {
+                PointHistory(
+                    id = 3L,
+                    userId = mockUserPoint.id,
+                    TransactionType.USE,
+                    amount = useAmount,
+                    timeMillis = System.currentTimeMillis()
+                )
+            }
+
+        // when
+        val result = pointService.useUserPoint(mockUserPoint.id, useAmount)
+
+        // then
+        assertThat(result.id).isEqualTo(mockUserPoint.id)
+        assertThat(result.point).isEqualTo(updatedPoint)
+        verifySequence {
+            userPointTable.selectById(mockUserPoint.id)
+            userPointTable.insertOrUpdate(mockUserPoint.id, updatedPoint)
+            pointHistoryTable.insert(mockUserPoint.id, useAmount, TransactionType.USE, any())
+        }
+    }
 }
