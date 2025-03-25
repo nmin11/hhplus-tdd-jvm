@@ -3,7 +3,9 @@ package io.hhplus.tdd
 import io.hhplus.tdd.database.PointHistoryTable
 import io.hhplus.tdd.database.UserPointTable
 import io.hhplus.tdd.point.PointService
+import io.hhplus.tdd.point.UserPoint
 import io.mockk.MockKAnnotations
+import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import org.assertj.core.api.Assertions.assertThat
@@ -42,5 +44,27 @@ class PointServiceTest {
         assertThat(exception)
             .isInstanceOf(IllegalArgumentException::class.java)
             .hasMessage("유저 ID에는 0 이하의 값을 입력할 수 없습니다.")
+    }
+
+    @Test
+    fun `getUserPoint_기존에_없는_id이면_새로운_유저_생성_및_반환`() {
+        // given
+        val newUserId = 999L
+        val now = System.currentTimeMillis()
+        every { userPointTable.selectById(newUserId) } answers {
+            UserPoint(
+                id = newUserId,
+                point = 0L,
+                updateMillis = now
+            )
+        }
+
+        // when
+        val result = pointService.getUserPoint(newUserId)
+
+        // then
+        assertThat(result.id).isEqualTo(newUserId)
+        assertThat(result.point).isEqualTo(0L)
+        assertThat(result.updateMillis).isEqualTo(now)
     }
 }
