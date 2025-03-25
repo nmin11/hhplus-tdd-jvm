@@ -136,4 +136,20 @@ class PointServiceTest {
         assertThat(result).containsExactlyElementsOf(mockPointHistories)
         verify(exactly = 1) { pointHistoryTable.selectAllByUserId(1L) }
     }
+
+    @Test
+    fun `chargeUserPoint_음수_금액이면_예외_발생`() {
+        // given
+        val invalidAmount = -1000L
+
+        // when
+        val exception = assertThrows<IllegalArgumentException> {
+            pointService.chargeUserPoint(1L, invalidAmount)
+        }
+
+        // then
+        assertThat(exception)
+            .isInstanceOf(IllegalArgumentException::class.java)
+            .hasMessage("포인트 충전 금액은 0보다 큰 정수여야 합니다.")
+    }
 }
