@@ -42,7 +42,7 @@ class PointServiceTest {
             timeMillis = now - 10000
         ),
         PointHistory(
-            id = 1L,
+            id = 2L,
             userId = 1L,
             amount = 5000L,
             type = TransactionType.USE,
@@ -166,6 +166,23 @@ class PointServiceTest {
         assertThat(exception)
             .isInstanceOf(IllegalArgumentException::class.java)
             .hasMessage("포인트 충전 금액은 0보다 큰 정수여야 합니다.")
+    }
+
+    @Test
+    fun `chargeUserPoint_100만이_넘도록_포인트를_충전하려고_하면_예외_발생`() {
+        // given
+        // 기존 5,000 포인트가 있으므로 합하면 100만 초과
+        val invalidAmount = 996_000L
+
+        every { userPointTable.selectById(1L) } returns mockUserPoint
+
+        // when
+        val exception = assertThrows<IllegalStateException> {
+            pointService.chargeUserPoint(mockUserPoint.id, mockUserPoint.point + invalidAmount)
+        }
+
+        // then
+        assertThat(exception.message).isEqualTo("포인트는 1,000,000원을 초과할 수 없습니다.")
     }
 
     @Test
