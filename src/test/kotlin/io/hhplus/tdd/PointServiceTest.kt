@@ -226,14 +226,15 @@ class PointServiceTest {
     fun `chargeUserPoint_기존에_있는_유저의_포인트_충전_성공`() {
         // given
         val chargeAmount = 1000L
+        val updatedPoint = mockUserPoint.point + chargeAmount
 
         every { userPointTable.selectById(1L) } returns mockUserPoint
 
-        every { userPointTable.insertOrUpdate(mockUserPoint.id, mockUserPoint.point + chargeAmount) }
+        every { userPointTable.insertOrUpdate(mockUserPoint.id, updatedPoint) }
             .answers {
                 UserPoint(
                     id = mockUserPoint.id,
-                    point = mockUserPoint.point + chargeAmount,
+                    point = updatedPoint,
                     updateMillis = now
                 )
             }
@@ -241,7 +242,7 @@ class PointServiceTest {
         every { pointHistoryTable.insert(mockUserPoint.id, chargeAmount, TransactionType.CHARGE, any()) }
             .answers {
                 PointHistory(
-                    id = 3,
+                    id = 3L,
                     userId = mockUserPoint.id,
                     type = TransactionType.CHARGE,
                     amount = chargeAmount,
@@ -254,10 +255,10 @@ class PointServiceTest {
 
         // then
         assertThat(result.id).isEqualTo(mockUserPoint.id)
-        assertThat(result.point).isEqualTo(mockUserPoint.point + chargeAmount)
+        assertThat(result.point).isEqualTo(updatedPoint)
         verifySequence {
             userPointTable.selectById(mockUserPoint.id)
-            userPointTable.insertOrUpdate(mockUserPoint.id, mockUserPoint.point + chargeAmount)
+            userPointTable.insertOrUpdate(mockUserPoint.id, updatedPoint)
             pointHistoryTable.insert(mockUserPoint.id, chargeAmount, TransactionType.CHARGE, any())
         }
     }
