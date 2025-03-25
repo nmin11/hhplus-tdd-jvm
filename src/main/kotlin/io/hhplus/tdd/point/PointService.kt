@@ -19,6 +19,8 @@ class PointService(
     }
 
     fun chargeUserPoint(id: Long, amount: Long): UserPoint {
+        require(amount > 0) { "포인트 충전 금액은 0보다 큰 정수여야 합니다." }
+
         var userPoint = getUserPoint(id)
         userPoint = userPointTable.insertOrUpdate(id, userPoint.point + amount)
         pointHistoryTable.insert(id, amount, TransactionType.CHARGE, System.currentTimeMillis())
