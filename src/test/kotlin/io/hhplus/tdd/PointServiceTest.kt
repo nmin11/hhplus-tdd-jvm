@@ -6,11 +6,9 @@ import io.hhplus.tdd.point.PointHistory
 import io.hhplus.tdd.point.PointService
 import io.hhplus.tdd.point.TransactionType
 import io.hhplus.tdd.point.UserPoint
-import io.mockk.MockKAnnotations
-import io.mockk.every
+import io.mockk.*
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
-import io.mockk.verify
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -168,5 +166,42 @@ class PointServiceTest {
         assertThat(exception)
             .isInstanceOf(IllegalArgumentException::class.java)
             .hasMessage("포인트 충전 금액은 0보다 큰 정수여야 합니다.")
+    }
+
+    @Test
+    fun `chargeUserPoint_기존에_없는_id이면_새로운_유저_생성_후_포인트_충전`() {
+        // given
+        val newUserId = 2L
+        val chargeAmount = 1000L
+
+        every { userPointTable.selectById(newUserId) } answers {
+            UserPoint(id = newUserId, point = 0L, updateMillis = now)
+        }
+
+        every { userPointTable.insertOrUpdate(newUserId, chargeAmount) } answers {
+            UserPoint(id = newUserId, point = chargeAmount, updateMillis = now)
+        }
+
+        every { pointHistoryTable.insert(newUserId, chargeAmount, TransactionType.CHARGE, any()) } answers {
+            PointHistory(
+                id = 1,
+                userId = newUserId,
+                type = TransactionType.CHARGE,
+                amount = chargeAmount,
+                timeMillis = System.currentTimeMillis()
+            )
+        }
+
+        // when
+        val result = pointService.chargeUserPoint(newUserId, chargeAmount)
+
+        // then
+        assertThat(result.id).isEqualTo(newUserId)
+        assertThat(result.point).isEqualTo(chargeAmount)
+        verifySequence {
+            userPointTable.selectById(newUserId)
+            userPointTable.insertOrUpdate(newUserId, chargeAmount)
+            pointHistoryTable.insert(newUserId, chargeAmount, TransactionType.CHARGE, any())
+        }
     }
 }
