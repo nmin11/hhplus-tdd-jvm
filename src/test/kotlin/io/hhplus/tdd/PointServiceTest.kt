@@ -27,13 +27,13 @@ class PointServiceTest {
 
     private val now = System.currentTimeMillis()
 
-    private var mockUserPoint = UserPoint(
+    private val mockUserPoint = UserPoint(
         id = 1L,
         point = 5000L,
         updateMillis = now
     )
 
-    private var mockPointHistories = mutableListOf(
+    private val mockPointHistories = listOf(
         PointHistory(
             id = 1L,
             userId = 1L,
@@ -293,5 +293,22 @@ class PointServiceTest {
         assertThat(exception)
             .isInstanceOf(IllegalArgumentException::class.java)
             .hasMessage("포인트 사용 금액은 0보다 큰 정수여야 합니다.")
+    }
+
+    @Test
+    fun `useUserPoint_보유_포인트보다_많이_사용하려고_하면_예외_발생`() {
+        // given
+        val useAmount = 6000L
+        every { userPointTable.selectById(1L) } returns mockUserPoint
+
+        // when
+        val exception = assertThrows<IllegalStateException> {
+            pointService.useUserPoint(mockUserPoint.id, useAmount)
+        }
+
+        // then
+        assertThat(exception)
+            .isInstanceOf(IllegalStateException::class.java)
+            .hasMessage("보유 포인트가 부족합니다.")
     }
 }
