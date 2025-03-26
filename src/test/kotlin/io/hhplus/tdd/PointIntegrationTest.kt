@@ -159,4 +159,62 @@ class PointIntegrationTest {
         val userPoint = userPointTable.selectById(userId)
         assertThat(userPoint.point).isEqualTo(2_000L)
     }
+
+    @Test
+    fun `충전과_사용_요청이_동시에_들어와도_값이_유효하다면_정상적으로_처리`() {
+        // given
+        val userId = 1L
+        userPointTable.insertOrUpdate(userId, 10_000L)
+        val chargeAmount = 1_000L
+        val useAmount = 500L
+        val latch = CountDownLatch(10)
+        val executor = Executors.newFixedThreadPool(10)
+        val results = mutableListOf<MockHttpServletResponse>()
+
+        // when
+        val tasks = mutableListOf<() -> MockHttpServletResponse>()
+
+        tasks.addAll(List(5) {
+            {
+                mockMvc.perform(
+                    patch("/point/$userId/charge")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(chargeAmount.toString())
+                ).andReturn().response
+            }
+        })
+
+        tasks.addAll(List(5) {
+            {
+                mockMvc.perform(
+                    patch("/point/$userId/use")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(useAmount.toString())
+                ).andReturn().response
+            }
+        })
+
+        tasks.shuffled().forEach { task ->
+            executor.submit {
+                try {
+                    results.add(task())
+                } catch (e: Exception) {
+                    println("예외 발생: ${e.message}")
+                } finally {
+                    latch.countDown()
+                }
+            }
+        }
+
+        latch.await()
+
+        // then
+        val successCount = results.count { it.status == 200 }
+        val userPoint = userPointTable.selectById(userId)
+        val pointHistories = pointHistoryTable.selectAllByUserId(userId)
+
+        assertThat(successCount).isEqualTo(10)
+        assertThat(userPoint.point).isEqualTo(12_500L)
+        assertThat(pointHistories.size).isEqualTo(10)
+    }
 }
