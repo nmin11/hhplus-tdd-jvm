@@ -70,7 +70,7 @@ class PointIntegrationTest {
     }
 
     @Test
-    fun `95만_포인트를_가진_유저에게_3만_포인트_충전_요청이_2개가_동시에_들어오면_한_요청은_실패`() {
+    fun `95만_포인트를_가진_유저에게_3만_포인트_충전_요청이_2개가_동시에_들어오면_하나는_실패`() {
         // given
         val userId = 1L
         userPointTable.insertOrUpdate(userId, 950_000L)
