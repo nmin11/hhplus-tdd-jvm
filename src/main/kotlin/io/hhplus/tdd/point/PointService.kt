@@ -54,14 +54,23 @@ class PointService(
     fun useUserPoint(id: Long, amount: Long): UserPoint {
         require(amount > 0) { "포인트 사용 금액은 0보다 큰 정수여야 합니다." }
 
-        var userPoint = getUserPoint(id)
+        val lock = locks.computeIfAbsent(id) { ReentrantLock() }
+        lock.lock()
+        try {
+            var userPoint = getUserPoint(id)
 
-        if (userPoint.point < amount) {
-            throw IllegalStateException("보유 포인트가 부족합니다.")
+            if (userPoint.point < amount) {
+                throw IllegalStateException("보유 포인트가 부족합니다.")
+            }
+
+            userPoint = userPointTable.insertOrUpdate(id, userPoint.point - amount)
+            pointHistoryTable.insert(id, amount, TransactionType.USE, System.currentTimeMillis())
+            return userPoint
+        } catch (e: Exception) {
+            logger.error("포인트 사용 중 예외 발생: ${e.message}")
+            throw e
+        } finally {
+            lock.unlock()
         }
-
-        userPoint = userPointTable.insertOrUpdate(id, userPoint.point - amount)
-        pointHistoryTable.insert(id, amount, TransactionType.USE, System.currentTimeMillis())
-        return userPoint
     }
 }
