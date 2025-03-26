@@ -30,7 +30,7 @@ class PointIntegrationTest {
         val userId = 1L
         userPointTable.insertOrUpdate(userId, 5000L)
         pointHistoryTable.insert(userId, 10000L, TransactionType.CHARGE, System.currentTimeMillis())
-        pointHistoryTable.insert(userId, 5000, TransactionType.USE, System.currentTimeMillis())
+        pointHistoryTable.insert(userId, 5000L, TransactionType.USE, System.currentTimeMillis())
 
         // when & then
         mockMvc
