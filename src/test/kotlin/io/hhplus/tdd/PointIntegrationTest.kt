@@ -44,4 +44,22 @@ class PointIntegrationTest {
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.length()").value(2))
     }
+
+    @Test
+    fun `기존에_없는_유저를_조회하면_포인트_및_포인트_사용_내역이_없는_새_유저_생성`() {
+        // given
+        val nonExistenceId = 2L
+
+        // when & then
+        mockMvc
+            .perform(get("/point/$nonExistenceId"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.id").value(nonExistenceId))
+            .andExpect(jsonPath("$.point").value(0))
+
+        mockMvc
+            .perform(get("/point/$nonExistenceId/histories"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.length()").value(0))
+    }
 }
