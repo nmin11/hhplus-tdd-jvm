@@ -9,7 +9,7 @@ class PointService(
     private val userPointTable: UserPointTable,
     private val pointHistoryTable: PointHistoryTable
 ) {
-    private val MAX_POINT = 1_000_000L
+    private val maxPoint = 1_000_000L
 
     fun getUserPoint(id: Long): UserPoint {
         require(id > 0) { "유저 ID에는 0 이하의 값을 입력할 수 없습니다." }
@@ -25,7 +25,7 @@ class PointService(
 
         var userPoint = getUserPoint(id)
 
-        if (userPoint.point + amount > MAX_POINT) {
+        if (userPoint.point + amount > maxPoint) {
             throw IllegalStateException("포인트는 1,000,000원을 초과할 수 없습니다.")
         }
 
