@@ -113,4 +113,50 @@ class PointIntegrationTest {
         val userPoint = userPointTable.selectById(1L)
         assertThat(userPoint.point).isEqualTo(980_000L)
     }
+
+    @Test
+    fun `5000포인트를_가진_유저에게_3000_포인트_사용_요청이_2개_동시에_들어오면_하나는_실패`() {
+        // given
+        val userId = 1L
+        userPointTable.insertOrUpdate(userId, 5_000L)
+        val useAmount = 3_000L
+        val latch = CountDownLatch(2)
+        val executor = Executors.newFixedThreadPool(2)
+        val results = mutableListOf<MockHttpServletResponse>()
+
+        // when
+        repeat(2) {
+            executor.submit {
+                try {
+                    val result = mockMvc
+                        .perform(
+                            patch("/point/$userId/use")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(useAmount.toString())
+                        ).andReturn().response
+                    results.add(result)
+                } catch (e: Exception) {
+                    println("예외 발생: ${e.message}")
+                } finally {
+                    latch.countDown()
+                }
+            }
+        }
+
+        latch.await()
+
+        // then
+        val successCount = results.count { it.status == 200 }
+        val failCount = results.count {
+            it.status == 500 &&
+                String(it.contentAsByteArray, Charsets.UTF_8)
+                    .contains("보유 포인트가 부족합니다.")
+        }
+
+        assertThat(successCount).isEqualTo(1)
+        assertThat(failCount).isEqualTo(1)
+
+        val userPoint = userPointTable.selectById(userId)
+        assertThat(userPoint.point).isEqualTo(2_000L)
+    }
 }
