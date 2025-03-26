@@ -72,7 +72,7 @@ class PointIntegrationTest {
     @Test
     fun `95만_포인트를_가진_유저에게_3만_포인트_충전_요청이_2개가_동시에_들어오면_하나는_실패`() {
         // given
-        val userId = 1L
+        val userId = 3L
         userPointTable.insertOrUpdate(userId, 950_000L)
         val chargeAmount = 30000L
         val latch = CountDownLatch(2)
@@ -110,14 +110,17 @@ class PointIntegrationTest {
         assertThat(successCount).isEqualTo(1)
         assertThat(failCount).isEqualTo(1)
 
-        val userPoint = userPointTable.selectById(1L)
+        val userPoint = userPointTable.selectById(userId)
+        val pointHistories = pointHistoryTable.selectAllByUserId(userId)
+
         assertThat(userPoint.point).isEqualTo(980_000L)
+        assertThat(pointHistories.size).isEqualTo(1)
     }
 
     @Test
     fun `5000포인트를_가진_유저에게_3000_포인트_사용_요청이_2개_동시에_들어오면_하나는_실패`() {
         // given
-        val userId = 1L
+        val userId = 4L
         userPointTable.insertOrUpdate(userId, 5_000L)
         val useAmount = 3_000L
         val latch = CountDownLatch(2)
@@ -157,13 +160,16 @@ class PointIntegrationTest {
         assertThat(failCount).isEqualTo(1)
 
         val userPoint = userPointTable.selectById(userId)
+        val pointHistories = pointHistoryTable.selectAllByUserId(userId)
+
         assertThat(userPoint.point).isEqualTo(2_000L)
+        assertThat(pointHistories.size).isEqualTo(1)
     }
 
     @Test
     fun `충전과_사용_요청이_동시에_들어와도_값이_유효하다면_정상적으로_처리`() {
         // given
-        val userId = 1L
+        val userId = 5L
         userPointTable.insertOrUpdate(userId, 10_000L)
         val chargeAmount = 1_000L
         val useAmount = 500L
