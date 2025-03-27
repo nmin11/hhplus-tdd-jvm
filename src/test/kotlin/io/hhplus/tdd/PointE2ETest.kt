@@ -152,4 +152,79 @@ class PointE2ETest {
             .andExpect(jsonPath("$[0].type").value("CHARGE"))
             .andExpect(jsonPath("$.length()").value(1))
     }
+
+    /*
+     * 사용자를 생성하고,
+     * 해당 사용자의 포인트를 적절히 충전한 이후,
+     * 해당 사용자의 포인트가 0보다 적어지도록 동시 사용 요청을 할 경우,
+     * 예외가 발생하는지 테스트하며,
+     * 테스트 이후 정상적인 포인트 내역만 존재하는지 확인
+     */
+    @Test
+    fun `사용자_포인트_부족에_대한_동시성_테스트`() {
+        val userId = 3L
+
+        // 1. getOrDefault 전략에 따라 새로운 사용자 생성
+        mockMvc
+            .perform(get("/point/$userId"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.id").value(userId))
+            .andExpect(jsonPath("$.point").value(0L))
+
+        // 2. 포인트 충전 요청
+        val chargeAmount = 50_000L
+
+        mockMvc
+            .perform(patch("/point/$userId/charge")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(chargeAmount.toString())
+            )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.id").value(userId))
+            .andExpect(jsonPath("$.point").value(chargeAmount))
+
+        // 3. 포인트 사용 동시 요청
+        val useAmount = 30_000L
+        val latch = CountDownLatch(2)
+        val executor = Executors.newFixedThreadPool(2)
+        val results = mutableListOf<MockHttpServletResponse>()
+
+        repeat(2) {
+            executor.submit {
+                try {
+                    val result = mockMvc
+                        .perform(
+                            patch("/point/$userId/use")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(useAmount.toString())
+                        ).andReturn().response
+                    results.add(result)
+                } catch (e: Exception) {
+                    println("예외 발생: ${e.message}")
+                } finally {
+                    latch.countDown()
+                }
+            }
+        }
+
+        latch.await()
+
+        val successCount = results.count { it.status == 200 }
+        val failCount = results.count {
+            it.status == 500 &&
+                String(it.contentAsByteArray, Charsets.UTF_8)
+                    .contains("보유 포인트가 부족합니다.")
+        }
+
+        assertThat(successCount).isEqualTo(1)
+        assertThat(failCount).isEqualTo(1)
+
+        // 3. 사용자 포인트 내역 조회
+        mockMvc
+            .perform(get("/point/$userId/histories"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$[0].type").value("CHARGE"))
+            .andExpect(jsonPath("$[1].type").value("USE"))
+            .andExpect(jsonPath("$.length()").value(2))
+    }
 }
