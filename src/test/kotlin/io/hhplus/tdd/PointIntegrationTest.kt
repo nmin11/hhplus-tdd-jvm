@@ -10,6 +10,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.mock.web.MockHttpServletResponse
+import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch
@@ -20,6 +21,7 @@ import java.util.concurrent.Executors
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 class PointIntegrationTest {
     @Autowired
     lateinit var mockMvc: MockMvc
@@ -85,7 +87,7 @@ class PointIntegrationTest {
     @Test
     fun `95만_포인트를_가진_유저에게_3만_포인트_충전_요청이_2개가_동시에_들어오면_하나는_실패`() {
         // given
-        val userId = 3L
+        val userId = 1L
         userPointTable.insertOrUpdate(userId, 950_000L)
         val chargeAmount = 30000L
         val latch = CountDownLatch(2)
@@ -138,7 +140,7 @@ class PointIntegrationTest {
     @Test
     fun `5000포인트를_가진_유저에게_3000_포인트_사용_요청이_2개_동시에_들어오면_하나는_실패`() {
         // given
-        val userId = 4L
+        val userId = 1L
         userPointTable.insertOrUpdate(userId, 5_000L)
         val useAmount = 3_000L
         val latch = CountDownLatch(2)
@@ -191,7 +193,7 @@ class PointIntegrationTest {
     @Test
     fun `충전과_사용_요청이_동시에_들어와도_값이_유효하다면_정상적으로_처리`() {
         // given
-        val userId = 5L
+        val userId = 1L
         userPointTable.insertOrUpdate(userId, 10_000L)
         val chargeAmount = 1_000L
         val useAmount = 500L
