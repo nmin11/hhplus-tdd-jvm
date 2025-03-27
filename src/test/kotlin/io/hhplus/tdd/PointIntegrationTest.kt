@@ -30,6 +30,10 @@ class PointIntegrationTest {
     @Autowired
     lateinit var pointHistoryTable: PointHistoryTable
 
+    /*
+     * 기존에 존재하는 사용자에 대해,
+     * 보유하고 있는 포인트 정보, 포인트 내역이 정상적으로 조회되는지 테스트
+     */
     @Test
     fun `포인트를_보유하고_있고_포인트_관련_내역이_있는_기존_사용자_조회`() {
         // given
@@ -51,6 +55,10 @@ class PointIntegrationTest {
             .andExpect(jsonPath("$.length()").value(2))
     }
 
+    /*
+     * 기존에 존재하지 않는 사용자를 조회할 경우,
+     * 새로운 사용자가 생성되며, 포인트가 0이고 포인트 내역이 존재하지 않는 것에 대해 테스트
+     */
     @Test
     fun `기존에_없는_유저를_조회하면_포인트_및_포인트_사용_내역이_없는_새_유저_생성`() {
         // given
@@ -69,6 +77,11 @@ class PointIntegrationTest {
             .andExpect(jsonPath("$.length()").value(0))
     }
 
+    /*
+     * 한 사용자에 대해 100만 포인트가 넘도록 하는 포인트 충전 요청이 동시에 들어오면,
+     * 사용자의 포인트는 정책상 100만을 넘을 수 없으므로,
+     * 100만을 넘지 않는 요청들만 성공하는 것에 대한 동시성 테스트
+     */
     @Test
     fun `95만_포인트를_가진_유저에게_3만_포인트_충전_요청이_2개가_동시에_들어오면_하나는_실패`() {
         // given
@@ -117,6 +130,11 @@ class PointIntegrationTest {
         assertThat(pointHistories.size).isEqualTo(1)
     }
 
+    /*
+     * 한 사용자에 대해 0 포인트보다 적어지도록 포인트 사용 요청이 동시에 들어오면,
+     * 사용자의 포인트는 정책상 0보다 적어질 수 없으므로,
+     * 포인트가 0이 되지 않도록 하는 요청들만 성공하는 것에 대한 동시성 테스트
+     */
     @Test
     fun `5000포인트를_가진_유저에게_3000_포인트_사용_요청이_2개_동시에_들어오면_하나는_실패`() {
         // given
@@ -166,6 +184,10 @@ class PointIntegrationTest {
         assertThat(pointHistories.size).isEqualTo(1)
     }
 
+    /*
+     * 동시에 여러 건의 포인트 충전 및 사용 요청이 들어올 때,
+     * 모든 요청이 성공적으로 완수되고, 포인트 및 사용 내역이 정상적인 경우에 대해 테스트
+     */
     @Test
     fun `충전과_사용_요청이_동시에_들어와도_값이_유효하다면_정상적으로_처리`() {
         // given
