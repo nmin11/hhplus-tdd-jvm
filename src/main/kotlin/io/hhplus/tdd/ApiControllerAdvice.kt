@@ -17,7 +17,7 @@ class ApiControllerAdvice : ResponseEntityExceptionHandler() {
     @ExceptionHandler(Exception::class)
     fun handleException(e: Exception): ResponseEntity<ErrorResponse> {
         return ResponseEntity(
-            ErrorResponse("500", "에러가 발생했습니다."),
+            ErrorResponse("500", e.message ?: "에러가 발생했습니다."),
             HttpStatus.INTERNAL_SERVER_ERROR,
         )
     }
